@@ -14,8 +14,8 @@
   },
   "discord": {
     "channel": "platoon-transfer",
-    "self_mention": "<@1479297098938585170>",
-    "peer_mention": "<@1479297673432399923>"
+    "own_discord_id": "<@1479297098938585170>",
+    "peer_discord_id": "<@1479297673432399923>"
   },
   "destinations": {
     "dest_a": {

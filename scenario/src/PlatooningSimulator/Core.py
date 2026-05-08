@@ -56,6 +56,11 @@ class Simulation(carla.Client):
 		"""
 		self.platoons.append(platoon)
 
+	def remove_platoon(self, platoon):
+		"""Remove a platoon from the simulation."""
+		if platoon in self.platoons:
+			self.platoons.remove(platoon)
+
 	def run_step(self, mode="control"):
 		"""Run one step of the simulation.
 
@@ -263,7 +268,8 @@ class Platoon:
 		
 		new_lead_controller = None
 		if not vehicles_to_split[0].autopilot:
-			new_lead_controller = copy(old_lead_controller)
+			if old_lead_controller is not None:
+				new_lead_controller = copy(old_lead_controller)
 
 		# Reconstruct self (remaining platoon)
 		remaining_v = all_v[:first] + all_v[last+1:]
@@ -278,9 +284,10 @@ class Platoon:
 					self.lead_vehicle.set_autopilot(True, tm_port)
 				else:
 					self.lead_vehicle.attach_controller(old_lead_controller)
-					old_lead_controller.vehicle = self.lead_vehicle
-					if hasattr(old_lead_controller, "reset_waypoints"):
-						old_lead_controller.reset_waypoints()
+					if old_lead_controller is not None:
+						old_lead_controller.vehicle = self.lead_vehicle
+						if hasattr(old_lead_controller, "reset_waypoints"):
+							old_lead_controller.reset_waypoints()
 		else:
 			self.lead_vehicle = None
 			self.follower_vehicles = []
@@ -299,9 +306,10 @@ class Platoon:
 				pass
 			else:
 				vehicles_to_split[0].attach_controller(new_lead_controller)
-				new_lead_controller.vehicle = vehicles_to_split[0]
-				if hasattr(new_lead_controller, "reset_waypoints"):
-					new_lead_controller.reset_waypoints()
+				if new_lead_controller is not None:
+					new_lead_controller.vehicle = vehicles_to_split[0]
+					if hasattr(new_lead_controller, "reset_waypoints"):
+						new_lead_controller.reset_waypoints()
 		else:
 			# New platoon leader was the original leader.
 			# Its autopilot/controller is already set correctly.

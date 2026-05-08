@@ -82,7 +82,7 @@ APPROACH_FAST_KMH = _speeds.get("approach_fast_kmh", 65.0)
 MERGE_DISTANCE_LIMIT_M = _gaps.get("merge_distance_limit_m", 55.0)
 MERGE_YAW_LIMIT_DEG = 15.0
 MERGE_TIMEOUT_S = _timeouts.get("merge_timeout_s", 120.0)
-LANE_CENTER_TOLERANCE_M = _gaps.get("lane_center_tolerance_m", 2.0)
+LANE_CENTER_TOLERANCE_M = _gaps.get("lane_center_tolerance_m", 3.0)
 PARALLEL_LOOKAHEAD_M = 800.0
 LOG_MAX_STEPS = 60000
 SHOW_PLOT = False
@@ -151,6 +151,9 @@ def _bridge_get_ready_transfer(request_id=None):
     if not ready:
         scope = f" for request_id={request_id}" if request_id else ""
         return None, f"no committed or merging transfer{scope}"
+    
+    # Sort by created_at to ensure deterministic selection (oldest first)
+    ready.sort(key=lambda t: t.get("created_at", ""))
     return ready[0], None
 
 # ── trigger server (receives POST /start_merge from OpenClaw bots) ────────────
@@ -602,11 +605,20 @@ def v_ref_cacc(predecessor, ego):
     gap = ego.distance_to(predecessor)
     v_pre = predecessor.speed
     v_ego = ego.speed
-    v_ref = (tau / h * (v_pre - v_ego + c * (gap - length - h * v_ego)) + v_ego) * 3.6
+    
+    # Smooth gap return logic for large gaps (e.g. after a split)
+    target_gap = length + h * v_ego
+    if gap > target_gap + 5.0:
+        gap_surplus = gap - target_gap
+        extra_kmh = min(gap_surplus * 1.5, CATCHUP_KMH * 2)
+        v_ref = (v_pre * 3.6) + extra_kmh
+    else:
+        v_ref = (tau / h * (v_pre - v_ego + c * (gap - target_gap)) + v_ego) * 3.6
+        
     # Lower bound: never brake below 60% of predecessor speed (prevents full stops
     # when gap closes briefly).  Upper bound: cap catchup to avoid overshooting.
     v_pre_kmh = v_pre * 3.6
-    return float(np.clip(v_ref, max(v_pre_kmh * 0.6, 3.0), v_pre_kmh + CATCHUP_KMH * 3))
+    return float(np.clip(v_ref, max(v_pre_kmh * 0.6, 3.0), v_pre_kmh + CATCHUP_KMH * 2))
 
 
 def v_ref_cacc_merge(predecessor, ego):
@@ -812,6 +824,7 @@ class TailTransferCoordinator:
 
         self.state = TransferState.CRUISE
         self.detached_vehicle = None
+        self.detached_platoon = None
         self.merge_complete = False
         self._lc_dir = None
         self._lc_confirm = 0
@@ -911,11 +924,12 @@ class TailTransferCoordinator:
             return False
         
         target_id = transfer["vehicle_id"]
-        # Find the vehicle in the donor platoon
+        # Find the vehicle in the donor platoon by its logical index
         donor_idx = -1
-        ids = [v.id for v in self.donor_platoon]
+        ids = [f"{self.donor_id}_truck{i}" for i in range(len(self.donor_platoon))]
         for i, v in enumerate(self.donor_platoon):
-            if v.id == target_id:
+            logical_id = f"{self.donor_id}_truck{i}"
+            if logical_id == target_id:
                 donor_idx = i
                 break
         
@@ -946,6 +960,7 @@ class TailTransferCoordinator:
             if not ready_front:
                 if getattr(target_v, "h", 0.5) < 3.5:
                     print(f"\n[split] Target {target_id} opening gap with PREDECESSOR {predecessor.id}.")
+                    target_v._original_h = getattr(target_v, "h", 0.5)
                     target_v.h = 4.0 # Target drifts back
                 elif step % 100 == 0:
                     print(f"[split] Front gap: {gap_front:.1f}m / {REQUIRED_GAP}m")
@@ -959,6 +974,7 @@ class TailTransferCoordinator:
             if not ready_behind:
                 if getattr(follower_behind, "h", 0.5) < 3.5:
                     print(f"[split] Successor {follower_behind.id} opening gap with TARGET {target_id}.")
+                    follower_behind._original_h = getattr(follower_behind, "h", 0.5)
                     follower_behind.h = 4.0 # Successor drifts back further
                 elif step % 100 == 0:
                     print(f"[split] Behind gap: {gap_behind:.1f}m / {REQUIRED_GAP}m")
@@ -971,7 +987,10 @@ class TailTransferCoordinator:
         
         # Reset headway for the successor BEFORE it becomes the new follower of the predecessor
         if donor_idx < len(self.donor_platoon) - 1:
-            self.donor_platoon[donor_idx + 1].h = 0.5 # Prepare to close gap after split
+            succ = self.donor_platoon[donor_idx + 1]
+            succ.h = getattr(succ, "_original_h", 0.5)
+            
+        target_v.h = getattr(target_v, "_original_h", 0.5)
         
         donor_target_v = self.donor_platoon[donor_idx]
         pair_metrics = compute_pair_metrics(self._map, self._receiver_tail(), donor_target_v)
@@ -996,8 +1015,9 @@ class TailTransferCoordinator:
         set_lead_speed(self.tm, self.donor_platoon, SYNC_SPEED_KMH)
 
         # Use split() to remove the vehicle at donor_idx. 
-        new_platoons = self.donor_platoon.split(donor_idx, donor_idx)
-        self.detached_vehicle = new_platoons[0][0] # The vehicle is now the leader of its own 1-car platoon
+        new_platoons, _ = self.donor_platoon.split(donor_idx, donor_idx)
+        self.detached_platoon = new_platoons
+        self.detached_vehicle = new_platoons[0] # The vehicle is now the leader of its own 1-car platoon
         
         self.detached_vehicle.attach_controller(None)
         configure_tm_vehicle(self.tm, self.detached_vehicle._carla_vehicle, SYNC_SPEED_KMH)
@@ -1047,7 +1067,7 @@ class TailTransferCoordinator:
         
         # Safety Check: Detect upcoming junctions (like the highway fork)
         if self._sample_ticks % 10 == 0:
-            if not self._is_straight(self.detached_vehicle._carla_vehicle, ahead_m=30.0):
+            if not self._is_straight(self.detached_vehicle._carla_vehicle, ahead_m=150.0):
                 self.abort("upcoming junction detected too close")
                 return
 
@@ -1095,6 +1115,7 @@ class TailTransferCoordinator:
                     self.tm.distance_to_leading_vehicle(self.detached_vehicle._carla_vehicle, TEMP_MERGE_FOLLOW_DIST_M)
                     self._set_speed(receiver_tail.speed * 3.6 + CATCHUP_KMH)
                     self.state = TransferState.FOLLOWING
+                    self._sample_ticks = 0
                     print(f"[transfer] LANE_CHANGE -> FOLLOWING  gap={gap:.1f}m")
             else:
                 self._lc_confirm = 0
@@ -1110,14 +1131,14 @@ class TailTransferCoordinator:
             receiver_tail = self._receiver_tail()
             gap = receiver_tail.distance_to(self.detached_vehicle)
             receiver_speed_kmh = receiver_tail.speed * 3.6
-            if gap > FOLLOW_DIST_M + 2.0:
+            if gap > TARGET_GAP_M + 2.0:
                 # Scale catchup speed with gap distance – faster when far away
                 extra = min(CATCHUP_KMH * gap / FOLLOW_DIST_M, CATCHUP_KMH * 3)
                 self._apply_manual_merge_control(receiver_speed_kmh + extra, lookahead_m=35.0)
             else:
                 self._apply_manual_merge_control(receiver_speed_kmh, lookahead_m=25.0)
                 offset = self._behind_offset()
-                if offset >= 0.0:
+                if offset >= TARGET_GAP_M - 1.0:
                     self.merge_complete = True
                     print(f"[transfer] FOLLOWING -> COMPLETE_READY  gap={gap:.1f}m  offset={offset:.1f}m")
 
@@ -1142,8 +1163,16 @@ class TailTransferCoordinator:
         # rather than waiting for the next take_measurements() call.
         gap_at_join = prev_tail.distance_to(joined_vehicle)
         v_pre_kmh = prev_tail.speed * 3.6
-        controller.target_speed = v_pre_kmh + min((gap_at_join - FOLLOW_DIST_M) * 3.0, CATCHUP_KMH * 3)
+        
+        # Ensure target_speed does not go below a safe lower bound (e.g. 60% of predecessor or 15 km/h)
+        raw_target_speed = v_pre_kmh + min((gap_at_join - FOLLOW_DIST_M) * 3.0, CATCHUP_KMH * 3)
+        controller.target_speed = max(raw_target_speed, max(v_pre_kmh * 0.6, MERGE_MIN_SPEED_KMH))
+        
         joined_vehicle.attach_controller(controller)
+
+        if self.detached_platoon is not None:
+            self.receiver_platoon.simulation.remove_platoon(self.detached_platoon)
+            self.detached_platoon = None
 
         self.state = TransferState.COMPLETE
         print(
@@ -1272,7 +1301,7 @@ def main():
         approach_started = True
         approach_start_time_s = time_s
         transfer, _ = _bridge_get_ready_transfer()
-        if transfer and transfer.get("status") == "committed":
+        if transfer and transfer.get("status") in ("committed", "merging"):
             _bridge_notify(transfer["request_id"], "merging")
         _bridge_update_readiness(
             "merging",
@@ -1339,8 +1368,9 @@ def main():
             if is_sample and not approach_started:
                 key = kb.read()
                 if key == " ":
-                    target_v = p1[1] if len(p1) > 1 else p1[-1]
-                    threading.Thread(target=_auto_bridge_commit, args=(target_v.id,), daemon=True).start()
+                    idx = 1 if len(p1) > 1 else 0
+                    logical_id = f"platoon_a_truck{idx}"
+                    threading.Thread(target=_auto_bridge_commit, args=(logical_id,), daemon=True).start()
                     start_approach(time_s)
                 elif _merge_trigger_event.is_set():
                     _merge_trigger_event.clear()
@@ -1563,6 +1593,8 @@ def main():
     finally:
         kb.restore()
         sim.release_synchronous()
+        for actor in sim.world.get_actors().filter('*vehicle*'):
+            actor.destroy()
     print("\n=== Done ===")
 
 if __name__ == "__main__":

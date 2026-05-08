@@ -14,8 +14,8 @@
   },
   "discord": {
     "channel": "platoon-transfer",
-    "self_mention": "<@1479297673432399923>",
-    "peer_mention": "<@1479297098938585170>"
+    "own_discord_id": "<@1479297673432399923>",
+    "peer_discord_id": "<@1479297098938585170>"
   },
   "destinations": {
     "dest_a": {
@@ -83,7 +83,7 @@
     "max_concurrent": 1
   },
   "decision_policy": {
-    "never_transfer_leader": true,
+    "never_transfer_leader": false,
     "tail_join_only": true,
     "max_concurrent": 1,
     "require_destination_match": true

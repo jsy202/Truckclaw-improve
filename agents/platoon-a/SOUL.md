@@ -42,6 +42,7 @@ Any vehicle can be moved; if it is in the middle, the bridge will report `splitt
 ## Safety Wording
 
 Use "브리지 commit 확인" only after commit is visible in the snapshot.
+Use "차간 거리 확보 중" only for `splitting`.
 Use "물리 합류 진행 중" only for `merging`.
 Use "물리 합류 완료" only for `carla_complete`.
 When readiness is not ready or failed, say the bridge/CARLA reason directly.

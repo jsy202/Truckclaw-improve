@@ -109,10 +109,10 @@ def _complete_logical_transfer(t: dict):
             
     return from_platoon, to_platoon
 
-USE_CARLA = os.environ.get("MOCK_CARLA", "false").lower() != "true" # Set MOCK_CARLA=true to simulate progress without CARLA
+MOCK_MODE = os.environ.get("MOCK_CARLA", "false").lower() == "true" # Set MOCK_CARLA=true to simulate progress without CARLA
 
 def _notify_carla_trigger(request_id: str):
-    if not USE_CARLA:
+    if MOCK_MODE:
         print(f"[bridge] Mock mode: CARLA trigger skipped for {request_id}. Simulating progress.")
         def _mock_progress():
             import time
@@ -185,6 +185,11 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/health": self._ok({"ok": True})
             elif p == "/snapshot": self._ok({"platoons": _platoons, "transfers": _transfers, "readiness": _readiness})
             elif p == "/readiness": self._ok(_readiness)
+            elif p.startswith("/transfers/"):
+                rid = p.split("/")[-1]
+                t = _transfers.get(rid)
+                if t: self._ok(t)
+                else: self._err(404, "not found")
             elif p.startswith("/platoons/"):
                 pid = p.split("/")[-1]
                 if pid.endswith("/transfer-candidates"):
@@ -204,14 +209,21 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/readiness":
                 _readiness.update(body); _readiness["updated_at"] = _now(); self._ok(_readiness)
             elif p == "/reload":
-                _platoons = _load_initial_state(); self._ok({"ok": True})
+                global _transfers
+                _platoons = _load_initial_state()
+                _transfers = {}
+                self._ok({"ok": True})
             elif p == "/transfers":
                 vid, fp, tp = body.get("vehicle_id"), body.get("from_platoon_id"), body.get("to_platoon_id")
                 if not vid or not fp or not tp: return self._err(400, "missing fields")
-                # Takeover logic
-                active = _active_transfer_for_vehicle(vid)
-                if active and _transfers[active]["status"] in ("pending", "accepted"):
-                    _transfers[active]["status"] = "replaced"
+                
+                active_vid = _active_transfer_for_vehicle(vid)
+                if (_active_transfer_for(fp) or _active_transfer_for(tp)) and not active_vid:
+                    return self._err(409, "platoon already has an active transfer")
+                
+                # Takeover logic for vehicle (safety check)
+                if active_vid and _transfers[active_vid]["status"] in ("pending", "accepted"):
+                    _transfers[active_vid]["status"] = "replaced"
                 rid = "tr_" + uuid.uuid4().hex[:8]
                 t = {"request_id": rid, "vehicle_id": vid, "from_platoon_id": fp, "to_platoon_id": tp, "status": "pending", "requires_split": not _is_tail_member(_platoons[fp], vid), "created_at": _now()}
                 _transfers[rid] = t; self._ok(t)
@@ -219,19 +231,33 @@ class Handler(BaseHTTPRequestHandler):
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
                 if t: t["status"] = "accepted"; self._ok(t)
                 else: self._err(404, "not found")
+            elif "/reject" in p:
+                rid = p.split("/")[-2]; t = _transfers.get(rid)
+                if t: t["status"] = "rejected"; self._ok(t)
+                else: self._err(404, "not found")
             elif "/commit" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
                 if t: t["status"] = "committed"; _notify_carla_trigger(rid); self._ok(t)
                 else: self._err(404, "not found")
+            elif "/retry" in p:
+                rid = p.split("/")[-2]; t = _transfers.get(rid)
+                if t: t["status"] = "pending"; self._ok(t)
+                else: self._err(404, "not found")
+            elif "/splitting" in p:
+                rid = p.split("/")[-2]; t = _transfers.get(rid)
+                if t: t["status"] = "splitting"; self._ok(t)
+                else: self._err(404, "not found")
             elif "/merging" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
                 if t: t["status"] = "merging"; self._ok(t)
+                else: self._err(404, "not found")
             elif "/carla_complete" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
                 if t: _complete_logical_transfer(t); t["status"] = "carla_complete"; self._ok(t)
+                else: self._err(404, "not found")
             elif "/failed" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: t["status"] = "merge_failed"; t["error"] = body.get("reason", "unknown"); self._ok(t)
+                if t: t["status"] = "merge_failed"; t["reason"] = body.get("reason", "unknown"); self._ok(t)
             else: self._err(404, "not found")
 
 def main():
