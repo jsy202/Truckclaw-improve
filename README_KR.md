@@ -51,7 +51,8 @@
 - `scenario/`: CARLA 물리 시뮬레이션 스크립트 및 군집 주행 라이브러리.
 - `bridge/`: 협상 에이전트와 CARLA를 연결하는 REST API 서버.
 - `agents/`: AI 에이전트(OpenClaw)의 페르소나 및 협상 스킬 지침(SKILL.md).
-- `config/`: 군집 정보(`platoons.json`) 및 시뮬레이션 파라미터(`simulation.json`).
+- `platoon_destinations.json`: 군집 및 차량 목적지 설정. 사람이 직접 수정하기 쉬운 루트 설정 파일.
+- `config/`: 시뮬레이션 파라미터(`simulation.json`) 및 이전 형식 목적지 설정(`platoons.json`, fallback).
 
 ---
 

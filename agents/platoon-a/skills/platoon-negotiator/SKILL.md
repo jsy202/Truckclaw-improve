@@ -70,7 +70,7 @@ Eligible vehicle criteria:
 - the bridge still shows it in `platoon_a`
 - the bridge candidate list agrees
 
-**Note: Leader (truck0) transfers are now supported.** If the leader needs to transfer, the next truck will be promoted.
+**Physical scenario constraint:** do not request leader (`truck0`) transfers. The current CARLA scenario supports follower transfers only.
 
 Post comparison result in Discord:
 
@@ -147,7 +147,7 @@ python3 /project/scripts/platoon_bridge_ctl.py retry <request_id>
 
 - Step 2 is always first in a fresh dialogue.
 - Every Discord message to TRUCKCLAW1 must start with `<@1479297098938585170>`.
-- Leader (truck0) transfers are supported.
+- Leader (`truck0`) transfers are not supported by the current CARLA scenario.
 - Create at most one request per negotiation.
 - Never say "합류 완료" unless status is `carla_complete`.
 - When physical progress is unclear, use `readiness.reason` instead of guessing from Discord text.

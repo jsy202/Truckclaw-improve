@@ -33,7 +33,7 @@ if the request is pending, moves a vehicle from `platoon_a` to `platoon_b`,
 matches Platoon B's destination, and no conflicting transfer is active.
 
 **Improvements:**
-- **Leader Handover:** You can now accept transfers for `platoon_a_truck0` (leader).
+- **Leader Constraint:** Do not accept `truck0` leader transfers in the current CARLA scenario.
 - **Mock Mode:** Physical maneuvers are currently simulated by the bridge. You do not need to wait for a real CARLA simulator to finish.
 - **Platoon Dissolution:** If a platoon becomes empty, it will be marked as `dissolved`.
 

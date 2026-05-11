@@ -1,6 +1,7 @@
 # Tools - Platoon B
 
 Run bridge commands from inside the OpenClaw container.
+Editable destination source is mounted at `/project/platoon_destinations.json`; use bridge `snapshot` as the live source of truth after reload.
 
 ```bash
 python3 /project/scripts/platoon_bridge_ctl.py snapshot

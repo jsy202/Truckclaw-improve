@@ -32,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("health")
     sub.add_parser("snapshot")
     sub.add_parser("readiness")
+    sub.add_parser("reload")
 
     platoon = sub.add_parser("platoon")
     platoon.add_argument("platoon_id")
@@ -81,6 +82,8 @@ def main() -> int:
         payload = _http("GET", f"{base}/snapshot")
     elif args.command == "readiness":
         payload = _http("GET", f"{base}/readiness")
+    elif args.command == "reload":
+        payload = _http("POST", f"{base}/reload", {})
     elif args.command == "platoon":
         payload = _http("GET", f"{base}/platoons/{parse.quote(args.platoon_id)}")
     elif args.command == "candidates":

@@ -20,15 +20,22 @@ import copy
 CARLA_TRIGGER_URL = "http://127.0.0.1:18802/start_merge"
 ACTIVE_TRANSFER_STATUSES = ("pending", "accepted", "committed", "merging", "splitting")
 FAILURE_TRANSFER_STATUSES = ("trigger_failed", "merge_failed")
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "platoons.json")
+DEFAULT_CONFIG_PATHS = [
+    os.environ.get("PLATOON_DESTINATIONS_PATH"),
+    os.path.join(os.path.dirname(__file__), "..", "platoon_destinations.json"),
+    "/platoon_destinations.json",
+    os.path.join(os.path.dirname(__file__), "..", "config", "platoons.json"),
+]
 
 def _load_initial_state():
-    try:
-        if os.path.exists(CONFIG_PATH):
-            with open(CONFIG_PATH, "r") as f:
-                return json.load(f)
-    except Exception as e:
-        print(f"[bridge] Failed to load config from {CONFIG_PATH}: {e}")
+    for path in [p for p in DEFAULT_CONFIG_PATHS if p]:
+        try:
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    data = json.load(f)
+                return data.get("platoons", data)
+        except Exception as e:
+            print(f"[bridge] Failed to load config from {path}: {e}")
     return {
         "platoon_a": {
             "platoon_id": "platoon_a",
@@ -36,8 +43,8 @@ def _load_initial_state():
             "status": "cruising",
             "members": [
                 {"vehicle_id": "platoon_a_truck0", "role": "leader",   "destination_id": "dest_a"},
-                {"vehicle_id": "platoon_a_truck1", "role": "follower", "destination_id": "dest_a"},
-                {"vehicle_id": "platoon_a_truck2", "role": "follower", "destination_id": "dest_b"},
+                {"vehicle_id": "platoon_a_truck1", "role": "follower", "destination_id": "dest_b"},
+                {"vehicle_id": "platoon_a_truck2", "role": "follower", "destination_id": "dest_a"},
             ],
         },
         "platoon_b": {
@@ -55,13 +62,19 @@ def _load_initial_state():
 _lock = threading.Lock()
 _platoons = _load_initial_state()
 _transfers: dict = {}
-_readiness: dict = {
-    "status": "unknown",
-    "merge_ready": False,
-    "reason": "initial",
-    "metrics": {},
-    "updated_at": None,
-}
+
+def _initial_readiness():
+    return {
+        "status": "idle",
+        "merge_ready": False,
+        "reason": "bridge reset; waiting for transfer commit",
+        "metrics": {},
+        "updated_at": None,
+        "request_id": None,
+        "vehicle_id": None,
+    }
+
+_readiness: dict = _initial_readiness()
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -191,16 +204,16 @@ class Handler(BaseHTTPRequestHandler):
                 if t: self._ok(t)
                 else: self._err(404, "not found")
             elif p.startswith("/platoons/"):
-                pid = p.split("/")[-1]
-                if pid.endswith("/transfer-candidates"):
+                if p.endswith("/transfer-candidates"):
                     pid = p.split("/")[-2]
                     self._ok({"candidates": _transfer_candidates(pid)})
                 else:
+                    pid = p.split("/")[-1]
                     self._ok(_platoons.get(pid, {}))
             else: self._err(404, "not found")
 
     def do_POST(self):
-        global _platoons
+        global _platoons, _transfers, _readiness
         p = self.path.rstrip("/")
         try: body = self._read_body()
         except: return self._err(400, "bad json")
@@ -209,9 +222,10 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/readiness":
                 _readiness.update(body); _readiness["updated_at"] = _now(); self._ok(_readiness)
             elif p == "/reload":
-                global _transfers
                 _platoons = _load_initial_state()
                 _transfers = {}
+                _readiness = _initial_readiness()
+                _readiness["updated_at"] = _now()
                 self._ok({"ok": True})
             elif p == "/transfers":
                 vid, fp, tp = body.get("vehicle_id"), body.get("from_platoon_id"), body.get("to_platoon_id")

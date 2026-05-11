@@ -70,7 +70,7 @@ TRUCKCLAW1:              request_id tr_xxxxxxxx commit 완료.
 |------|------|
 | **중간 차량 이송** | 꼬리 차량뿐 아니라 중간/선두 차량도 이송 가능 |
 | **이중 갭 확보** | 이송 차량 앞뒤 양쪽 20m 간격 동시 확보 후 분리 |
-| **선두 차량 인계** | truck0 이송 시 다음 차량이 리더로 자동 승진 |
+| **Follower 이송** | 현재 CARLA 시나리오는 truck0 리더 이송을 제외하고 follower 이송만 수행 |
 | **Mock CARLA 모드** | `MOCK_CARLA=true`로 CARLA 없이 협상 흐름만 테스트 |
 | **군집 해산 처리** | 군집이 비면 `dissolved` 상태로 자동 표시 |
 | **사전 경로 계산** | 분기점에서 잘못된 출구 선택 방지를 위한 직진 경로 사전 계산 |
@@ -257,6 +257,23 @@ MOCK_CARLA=true python3 bridge/platoon_bridge_server.py
 
 commit 후 브리지가 자동으로 `splitting → merging → carla_complete` 순서로 상태를 진행합니다. CARLA 시뮬레이터 없이 Discord 협상 전체를 검증할 수 있습니다.
 
+### OpenClaw 협상 하네스
+
+Discord/OpenClaw 없이도 동일한 bridge 계약을 deterministic하게 점검할 수 있습니다.
+
+```bash
+# 후보 검증만 수행
+python3 tools/openclaw_negotiation_harness.py --reload --dry-run
+
+# request -> accept -> commit까지 수행
+python3 tools/openclaw_negotiation_harness.py --reload
+
+# MOCK_CARLA=true bridge에서 carla_complete까지 대기
+python3 tools/openclaw_negotiation_harness.py --reload --wait-complete
+```
+
+하네스는 leader(`truck0`)를 제외하고, bridge candidate와 목적지 일치가 확인된 follower만 요청합니다.
+
 ---
 
 ## 수동 제어 (CLI)
@@ -286,7 +303,7 @@ kill $(lsof -ti:18801) 2>/dev/null; sleep 1 && python3 bridge/platoon_bridge_ser
 
 다른 차량을 이송 대상으로 바꾸고 싶다면:
 
-1. `config/platoons.json` 파일에서 원하는 차량의 `destination_id`를 수정합니다.
+1. 프로젝트 루트의 `platoon_destinations.json` 파일에서 원하는 차량의 `destination_id`를 수정합니다.
 2. 브리지 서버가 실행 중인 상태에서 아래 명령으로 설정을 다시 불러옵니다.
 
 ```bash
@@ -312,7 +329,7 @@ python3 bridge/platoon_bridge_ctl.py --base-url http://127.0.0.1:18801 snapshot
 | `/transfers/{id}/merging` | POST | CARLA 합류 시작 보고 |
 | `/transfers/{id}/carla_complete` | POST | 물리 합류 완료 보고 |
 | `/transfers/{id}/failed` | POST | 물리 합류 실패/타임아웃 보고 |
-| `/reload` | POST | `config/platoons.json` 재로드 |
+| `/reload` | POST | `platoon_destinations.json` 재로드 |
 
 ---
 

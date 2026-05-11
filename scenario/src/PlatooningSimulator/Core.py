@@ -283,6 +283,10 @@ class Platoon:
 				if old_lead_was_autopilot:
 					self.lead_vehicle.set_autopilot(True, tm_port)
 				else:
+					if old_lead_controller is None:
+						from PlatooningSimulator import PlatooningControllers
+						old_lead_controller = PlatooningControllers.LeadNavigator(self.lead_vehicle)
+					
 					self.lead_vehicle.attach_controller(old_lead_controller)
 					if old_lead_controller is not None:
 						old_lead_controller.vehicle = self.lead_vehicle

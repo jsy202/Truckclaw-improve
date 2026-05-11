@@ -27,6 +27,7 @@ Accept only if all are true:
 - `from_platoon_id` is `platoon_a`.
 - `to_platoon_id` is `platoon_b`.
 - The vehicle is a Platoon A follower and not `platoon_a_truck0`.
+- Reject leader (`truck0`) transfers; the current CARLA scenario supports follower transfers only.
 - The vehicle destination equals `own_platoon.destination_id`.
 - No pending or accepted transfer other than the current request conflicts with either platoon.
 

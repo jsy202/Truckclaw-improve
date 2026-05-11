@@ -54,6 +54,29 @@
     "bot_display_name": "TRUCKCLAW2",
     "destination_id": "dest_a"
   },
+  "peer_vehicles": [
+    {
+      "vehicle_id": "platoon_a_truck0",
+      "local_truck_id": 0,
+      "platoon_id": "platoon_a",
+      "destination_id": "dest_a",
+      "role": "leader"
+    },
+    {
+      "vehicle_id": "platoon_a_truck1",
+      "local_truck_id": 1,
+      "platoon_id": "platoon_a",
+      "destination_id": "dest_b",
+      "role": "follower"
+    },
+    {
+      "vehicle_id": "platoon_a_truck2",
+      "local_truck_id": 2,
+      "platoon_id": "platoon_a",
+      "destination_id": "dest_a",
+      "role": "follower"
+    }
+  ],
   "own_vehicles": [
     {
       "vehicle_id": "platoon_b_truck0",

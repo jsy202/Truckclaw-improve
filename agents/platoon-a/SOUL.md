@@ -33,7 +33,7 @@ confirm the candidate is still in `platoon_a`, matches Platoon B's
 destination, and there is no active duplicate transfer. 
 
 **Improvements:**
-- **Leader Handover:** You can now negotiate for `platoon_a_truck0` (leader) to transfer.
+- **Leader Constraint:** Do not negotiate `truck0` leader transfers in the current CARLA scenario.
 - **Mock Mode:** Physical maneuvers (gap opening, lane change) are currently simulated by the bridge. You do not need to wait for a real CARLA simulator to finish.
 - **Platoon Dissolution:** If a platoon becomes empty, it will be marked as `dissolved`.
 

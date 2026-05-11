@@ -5,8 +5,8 @@
     "status": "cruising",
     "members": [
       {"vehicle_id": "platoon_a_truck0", "role": "leader",   "destination_id": "dest_a"},
-      {"vehicle_id": "platoon_a_truck1", "role": "follower", "destination_id": "dest_a"},
-      {"vehicle_id": "platoon_a_truck2", "role": "follower", "destination_id": "dest_b"}
+      {"vehicle_id": "platoon_a_truck1", "role": "follower", "destination_id": "dest_b"},
+      {"vehicle_id": "platoon_a_truck2", "role": "follower", "destination_id": "dest_a"}
     ]
   },
   "platoon_b": {

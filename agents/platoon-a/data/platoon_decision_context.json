@@ -66,14 +66,14 @@
       "vehicle_id": "platoon_a_truck1",
       "local_truck_id": 1,
       "platoon_id": "platoon_a",
-      "destination_id": "dest_a",
+      "destination_id": "dest_b",
       "role": "follower"
     },
     {
       "vehicle_id": "platoon_a_truck2",
       "local_truck_id": 2,
       "platoon_id": "platoon_a",
-      "destination_id": "dest_b",
+      "destination_id": "dest_a",
       "role": "follower"
     }
   ],
@@ -83,7 +83,7 @@
     "max_concurrent": 1
   },
   "decision_policy": {
-    "never_transfer_leader": false,
+    "never_transfer_leader": true,
     "tail_join_only": true,
     "max_concurrent": 1,
     "require_destination_match": true

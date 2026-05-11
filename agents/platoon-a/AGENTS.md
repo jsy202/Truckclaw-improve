@@ -23,7 +23,7 @@
 Transfer only if all are true:
 
 - The vehicle is a Platoon A follower.
-- The vehicle is not `platoon_a_truck0`.
+- The vehicle is not a leader and is not `platoon_a_truck0`.
 - The vehicle `destination_id` equals Platoon B's platoon destination.
 - Bridge `candidates platoon_a` includes the same vehicle and target platoon.
 - Snapshot shows no active pending or accepted transfer for either platoon.

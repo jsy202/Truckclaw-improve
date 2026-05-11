@@ -19,7 +19,7 @@
   4. 차량 목적지 수정 및 실시간 반영 (커스텀 테스트)
   만약 다른 차량을 옮기고 싶다면 다음과 같이 하세요.
 
-   1. /home/user/truck-platoon-openclaw-improve/config/platoons.json 파일을 엽니다.
+   1. /home/user/truck-platoon-openclaw-improve/platoon_destinations.json 파일을 엽니다.
    2. 이송하고 싶은 차량의 destination_id를 상대 소대의 목적지(dest_b 또는 dest_a)와 일치시킵니다.
    3. 브리지 서버가 켜진 상태에서 아래 명령을 입력하여 설정을 새로고침합니다.
 

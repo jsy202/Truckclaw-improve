@@ -52,7 +52,7 @@ The transfer must have:
 
 If any field mismatches, reject or ask TRUCKCLAW2 to refresh.
 
-**Note: Leader (truck0) transfers are now allowed.**
+**Physical scenario constraint:** do not accept leader (`truck0`) transfers. The current CARLA scenario supports follower transfers only.
 
 ## Step 4 - Check bridge snapshot before accepting
 
@@ -152,7 +152,7 @@ python3 /project/scripts/platoon_bridge_ctl.py retry <request_id>
 
 - Step 1 is always first in a fresh dialogue.
 - Every Discord message to TRUCKCLAW2 must start with `<@1479297673432399923>`.
-- Leader (truck0) transfers are allowed.
+- Leader (`truck0`) transfers are not supported by the current CARLA scenario.
 - Accept and commit at most one request per negotiation.
 - Never say "합류 완료" unless status is `carla_complete`.
 - When physical progress is unclear, use `readiness.reason` instead of guessing from Discord text.
