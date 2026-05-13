@@ -26,3 +26,6 @@ venv/
 .vscode/
 .idea/
 *.swp
+
+# 테스트
+.pytest_cache/
