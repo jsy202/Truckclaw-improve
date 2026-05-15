@@ -41,7 +41,6 @@ def _wait_triggers(fake, n, timeout=2.0):
 
 # ── Input validation ─────────────────────────────────────────────────────────
 
-@pytest.mark.xfail(strict=True, reason="DEF-01: unknown vehicle_id is accepted with 200 and status pending")
 def test_rejects_unknown_vehicle_id(client):
     # REQ: a transfer may only be created for a vehicle that is a member of from_platoon_id.
     status, body = client.post("/transfers", {"vehicle_id": "ghost_truck9", "from_platoon_id": FROM, "to_platoon_id": TO})
@@ -49,7 +48,6 @@ def test_rejects_unknown_vehicle_id(client):
     assert client.snapshot()["transfers"] == {}
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-02: unknown from_platoon_id raises KeyError; connection closed without response")
 def test_rejects_unknown_platoon_id(client):
     # REQ: invalid input must produce an explicit HTTP error, never a dropped connection.
     status, body = client.post("/transfers", {"vehicle_id": VEHICLE, "from_platoon_id": "platoon_x", "to_platoon_id": TO})

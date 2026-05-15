@@ -246,7 +246,11 @@ class Handler(BaseHTTPRequestHandler):
             elif p == "/transfers":
                 vid, fp, tp = body.get("vehicle_id"), body.get("from_platoon_id"), body.get("to_platoon_id")
                 if not vid or not fp or not tp: return self._err(400, "missing fields")
-                
+                if fp not in _platoons or tp not in _platoons:
+                    return self._err(404, "unknown platoon")
+                if not any(m["vehicle_id"] == vid for m in _platoons[fp]["members"]):
+                    return self._err(404, f"vehicle {vid} is not a member of {fp}")
+
                 active_vid = _active_transfer_for_vehicle(vid)
                 if (_active_transfer_for(fp) or _active_transfer_for(tp)) and not active_vid:
                     return self._err(409, "platoon already has an active transfer")
