@@ -233,7 +233,8 @@ class Handler(BaseHTTPRequestHandler):
         p = self.path.rstrip("/")
         try: body = self._read_body()
         except: return self._err(400, "bad json")
-        
+        if not isinstance(body, dict): return self._err(400, "json body must be an object")
+
         with _lock:
             if p == "/readiness":
                 _readiness.update(body); _readiness["updated_at"] = _now(); self._ok(_readiness)

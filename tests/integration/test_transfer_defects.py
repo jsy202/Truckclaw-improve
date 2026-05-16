@@ -55,7 +55,6 @@ def test_rejects_unknown_platoon_id(client):
     assert "error" in body
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-08: non-object JSON body crashes the handler; connection closed without response")
 def test_rejects_non_object_json_body(client):
     # REQ: a malformed payload must be rejected with 400, not crash the request handler.
     status, body = client.post("/transfers", [1, 2])
