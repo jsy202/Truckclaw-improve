@@ -61,7 +61,6 @@ def test_rejects_non_object_json_body(client):
     assert status == 400, body
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-07: /failed on unknown request_id sends no response (missing else branch)")
 def test_failed_unknown_request_returns_error(client):
     # REQ: every endpoint must answer an unknown request_id with an explicit 404.
     status, body = client.post("/transfers/tr_doesnotexist/failed", {"reason": "x"})

@@ -293,6 +293,7 @@ class Handler(BaseHTTPRequestHandler):
             elif "/failed" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
                 if t: t["status"] = "merge_failed"; t["reason"] = body.get("reason", "unknown"); self._ok(t)
+                else: self._err(404, "not found")
             else: self._err(404, "not found")
 
 def main():
