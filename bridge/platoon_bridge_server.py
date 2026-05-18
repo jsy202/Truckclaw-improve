@@ -20,6 +20,7 @@ import copy
 CARLA_TRIGGER_URL = os.environ.get("CARLA_TRIGGER_URL", "http://127.0.0.1:18802/start_merge")
 ACTIVE_TRANSFER_STATUSES = ("pending", "accepted", "committed", "merging", "splitting")
 FAILURE_TRANSFER_STATUSES = ("trigger_failed", "merge_failed")
+COMMITTED_OR_LATER_STATUSES = ("committed", "splitting", "merging", "carla_complete")
 DEFAULT_CONFIG_PATHS = [
     os.environ.get("PLATOON_DESTINATIONS_PATH"),
     os.path.join(os.path.dirname(__file__), "..", "platoon_destinations.json"),
@@ -272,7 +273,9 @@ class Handler(BaseHTTPRequestHandler):
                 else: self._err(404, "not found")
             elif "/commit" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: t["status"] = "committed"; _notify_carla_trigger(rid); self._ok(t)
+                # Idempotent: a repeated commit returns the current state without re-triggering CARLA.
+                if t and t["status"] in COMMITTED_OR_LATER_STATUSES: self._ok(t)
+                elif t: t["status"] = "committed"; _notify_carla_trigger(rid); self._ok(t)
                 else: self._err(404, "not found")
             elif "/retry" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)

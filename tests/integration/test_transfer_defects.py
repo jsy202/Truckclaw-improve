@@ -80,13 +80,12 @@ def test_commit_requires_accepted_state(client, fake_carla):
     assert fake_carla.trigger_count() == 0
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-04: a second commit on the same request_id sends a second CARLA trigger")
 def test_duplicate_commit_does_not_retrigger_carla(client, fake_carla):
     # REQ: the same request_id must be executed at most once (idempotent commit).
     rid = _committed(client, fake_carla)
     _wait_triggers(fake_carla, 1)
-    status, _ = client.post(f"/transfers/{rid}/commit")
-    assert status < 500
+    status, body = client.post(f"/transfers/{rid}/commit")
+    assert status == 200 and body["status"] == "committed"  # idempotent: current state returned
     _wait_triggers(fake_carla, 2, timeout=0.5)
     assert fake_carla.trigger_count() == 1
 
