@@ -69,7 +69,6 @@ def test_failed_unknown_request_returns_error(client):
 
 # ── State transitions ────────────────────────────────────────────────────────
 
-@pytest.mark.xfail(strict=True, reason="DEF-03: commit is allowed from pending (accept skipped) and triggers CARLA")
 def test_commit_requires_accepted_state(client, fake_carla):
     # REQ: commit is only valid from 'accepted'; physical execution needs the receiver's acceptance.
     rid = _request(client)
@@ -90,7 +89,6 @@ def test_duplicate_commit_does_not_retrigger_carla(client, fake_carla):
     assert fake_carla.trigger_count() == 1
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-05: carla_complete on a pending transfer moves membership with no physical transfer")
 def test_carla_complete_requires_valid_state(client):
     # REQ: logical completion must follow physical execution (committed/splitting/merging only).
     rid = _request(client)
@@ -101,7 +99,6 @@ def test_carla_complete_requires_valid_state(client):
     assert client.members(TO) == before_to
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-06: accept on a completed transfer regresses status to 'accepted'")
 def test_completed_transfer_cannot_regress_to_accepted(client, fake_carla):
     # REQ: terminal states (carla_complete) must not transition back to earlier states.
     rid = _committed(client)

@@ -21,6 +21,17 @@ CARLA_TRIGGER_URL = os.environ.get("CARLA_TRIGGER_URL", "http://127.0.0.1:18802/
 ACTIVE_TRANSFER_STATUSES = ("pending", "accepted", "committed", "merging", "splitting")
 FAILURE_TRANSFER_STATUSES = ("trigger_failed", "merge_failed")
 COMMITTED_OR_LATER_STATUSES = ("committed", "splitting", "merging", "carla_complete")
+# Transfer state machine: action -> statuses it may be applied from (see validation/state_machine.md).
+ALLOWED_FROM = {
+    "accept":         ("pending",),
+    "reject":         ("pending", "accepted"),
+    "commit":         ("accepted",),
+    "retry":          ("committed",) + FAILURE_TRANSFER_STATUSES,
+    "splitting":      ("committed",),
+    "merging":        ("committed", "splitting"),
+    "carla_complete": ("committed", "splitting", "merging"),
+    "failed":         ("committed", "splitting", "merging"),
+}
 DEFAULT_CONFIG_PATHS = [
     os.environ.get("PLATOON_DESTINATIONS_PATH"),
     os.path.join(os.path.dirname(__file__), "..", "platoon_destinations.json"),
@@ -204,6 +215,11 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
     def _ok(self, body): self._send(200, body)
     def _err(self, code, msg): self._send(code, {"error": msg})
+    def _rejects_transition(self, t, action):
+        """Send 409 and return True if `action` is not allowed from the transfer's current status."""
+        if t["status"] in ALLOWED_FROM[action]: return False
+        self._err(409, f"cannot {action} transfer in status {t['status']}")
+        return True
     def _read_body(self):
         length = int(self.headers.get("Content-Length", 0))
         return json.loads(self.rfile.read(length).decode()) if length > 0 else {}
@@ -265,37 +281,45 @@ class Handler(BaseHTTPRequestHandler):
                 _transfers[rid] = t; self._ok(t)
             elif "/accept" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: t["status"] = "accepted"; self._ok(t)
+                if t and self._rejects_transition(t, "accept"): pass
+                elif t: t["status"] = "accepted"; self._ok(t)
                 else: self._err(404, "not found")
             elif "/reject" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: t["status"] = "rejected"; self._ok(t)
+                if t and self._rejects_transition(t, "reject"): pass
+                elif t: t["status"] = "rejected"; self._ok(t)
                 else: self._err(404, "not found")
             elif "/commit" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
                 # Idempotent: a repeated commit returns the current state without re-triggering CARLA.
                 if t and t["status"] in COMMITTED_OR_LATER_STATUSES: self._ok(t)
+                elif t and self._rejects_transition(t, "commit"): pass
                 elif t: t["status"] = "committed"; _notify_carla_trigger(rid); self._ok(t)
                 else: self._err(404, "not found")
             elif "/retry" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: t["status"] = "committed"; _notify_carla_trigger(rid); self._ok(t)
+                if t and self._rejects_transition(t, "retry"): pass
+                elif t: t["status"] = "committed"; _notify_carla_trigger(rid); self._ok(t)
                 else: self._err(404, "not found")
             elif "/splitting" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: t["status"] = "splitting"; self._ok(t)
+                if t and self._rejects_transition(t, "splitting"): pass
+                elif t: t["status"] = "splitting"; self._ok(t)
                 else: self._err(404, "not found")
             elif "/merging" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: t["status"] = "merging"; self._ok(t)
+                if t and self._rejects_transition(t, "merging"): pass
+                elif t: t["status"] = "merging"; self._ok(t)
                 else: self._err(404, "not found")
             elif "/carla_complete" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: _complete_logical_transfer(t); t["status"] = "carla_complete"; self._ok(t)
+                if t and self._rejects_transition(t, "carla_complete"): pass
+                elif t: _complete_logical_transfer(t); t["status"] = "carla_complete"; self._ok(t)
                 else: self._err(404, "not found")
             elif "/failed" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
-                if t: t["status"] = "merge_failed"; t["reason"] = body.get("reason", "unknown"); self._ok(t)
+                if t and self._rejects_transition(t, "failed"): pass
+                elif t: t["status"] = "merge_failed"; t["reason"] = body.get("reason", "unknown"); self._ok(t)
                 else: self._err(404, "not found")
             else: self._err(404, "not found")
 
