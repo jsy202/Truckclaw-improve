@@ -27,10 +27,12 @@ ALLOWED_FROM = {
     "reject":         ("pending", "accepted"),
     "commit":         ("accepted",),
     "retry":          ("committed",) + FAILURE_TRANSFER_STATUSES,
-    "splitting":      ("committed",),
-    "merging":        ("committed", "splitting"),
-    "carla_complete": ("committed", "splitting", "merging"),
-    "failed":         ("committed", "splitting", "merging"),
+    # trigger_failed means "trigger delivery unconfirmed": the scenario polls /snapshot and may
+    # still report real physical progress, which must not be rejected.
+    "splitting":      ("committed", "trigger_failed"),
+    "merging":        ("committed", "splitting", "trigger_failed"),
+    "carla_complete": ("committed", "splitting", "merging", "trigger_failed"),
+    "failed":         ("committed", "splitting", "merging", "trigger_failed"),
 }
 DEFAULT_CONFIG_PATHS = [
     os.environ.get("PLATOON_DESTINATIONS_PATH"),
@@ -189,6 +191,12 @@ def _notify_carla_trigger(request_id: str):
                     "request_id": request_id,
                     "updated_at": _now(),
                 })
+                # Reflect the failure on the transfer so it leaves the active set (platoons are released).
+                # Only a still-'committed' transfer is marked; progress already reported by CARLA wins.
+                t = _transfers.get(request_id)
+                if t and t["status"] == "committed":
+                    t["status"] = "trigger_failed"
+                    t["reason"] = f"CARLA trigger POST failed: {e}"
             print(f"[bridge] CARLA trigger failed: {e}")
     threading.Thread(target=_do, daemon=True).start()
 

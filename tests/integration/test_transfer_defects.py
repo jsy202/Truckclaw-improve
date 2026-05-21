@@ -110,14 +110,12 @@ def test_completed_transfer_cannot_regress_to_accepted(client, fake_carla):
 
 # ── Failure propagation / recovery ───────────────────────────────────────────
 
-@pytest.mark.xfail(strict=True, reason="DEF-09: trigger POST failure only updates readiness; transfer stays 'committed' (trigger_failed never set)")
 def test_trigger_failure_updates_transfer_state(client, unreachable_trigger):
     # REQ: a failed CARLA trigger must be reflected on the transfer as 'trigger_failed'.
     rid = _committed(client)
     client.wait_for_status(rid, "trigger_failed", timeout=4.0)
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-10: after a trigger failure the platoon stays locked (409) until /reload")
 def test_trigger_failure_does_not_permanently_block_platoon(client, unreachable_trigger):
     # REQ: a failed transfer must release the platoons so a new request can be made.
     _committed(client)
