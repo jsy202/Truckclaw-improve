@@ -129,16 +129,17 @@ def test_trigger_failure_does_not_permanently_block_platoon(client, unreachable_
     assert status == 200
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-11: no transfer timeout exists; committed transfer with no CARLA progress waits forever")
 def test_transfer_times_out(client, monkeypatch):
     # REQ: a committed transfer with no physical progress must end in a failure state after a bounded time.
-    # TRANSFER_TIMEOUT_S does not exist in the current bridge. It is the proposed
-    # configuration point, set short here so the test runs fast.
-    monkeypatch.setattr(bridge, "TRANSFER_TIMEOUT_S", 0.5, raising=False)
+    # TRANSFER_TIMEOUT_S is loaded from config/simulation.json timeouts.merge_timeout_s (120 s);
+    # shortened here so the test runs fast.
+    monkeypatch.setattr(bridge, "TRANSFER_TIMEOUT_S", 0.5)
     fake = FakeCarlaScenario(client.base_url, mode="silent").start()
     monkeypatch.setattr(bridge, "CARLA_TRIGGER_URL", fake.trigger_url)
     try:
         rid = _committed(client)
         client.wait_for_status(rid, bridge.FAILURE_TRANSFER_STATUSES, timeout=2.5)
+        t = client.transfer(rid)
+        assert t["status"] == "merge_failed" and t["reason"].startswith("timeout")
     finally:
         fake.stop()

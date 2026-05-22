@@ -9,6 +9,7 @@ vehicle transfers between platoon A and platoon B.
 import json
 import re
 import threading
+import time
 import urllib.error
 import urllib.request
 import uuid
@@ -34,6 +35,19 @@ ALLOWED_FROM = {
     "carla_complete": ("committed", "splitting", "merging", "trigger_failed"),
     "failed":         ("committed", "splitting", "merging", "trigger_failed"),
 }
+
+def _load_transfer_timeout_s(default=120.0):
+    """Reuse the existing timeouts.merge_timeout_s from config/simulation.json (no new setting)."""
+    path = os.path.join(os.path.dirname(__file__), "..", "config", "simulation.json")
+    try:
+        with open(path, "r") as f:
+            return float(json.load(f)["timeouts"]["merge_timeout_s"])
+    except Exception:
+        return default
+
+# A committed transfer with no CARLA progress report within this time becomes merge_failed.
+TRANSFER_TIMEOUT_S = _load_transfer_timeout_s()
+
 DEFAULT_CONFIG_PATHS = [
     os.environ.get("PLATOON_DESTINATIONS_PATH"),
     os.path.join(os.path.dirname(__file__), "..", "platoon_destinations.json"),
@@ -76,6 +90,7 @@ def _load_initial_state():
 _lock = threading.Lock()
 _platoons = _load_initial_state()
 _transfers: dict = {}
+_commit_deadlines: dict = {}  # request_id -> time.monotonic() deadline while status == committed
 
 def _initial_readiness():
     return {
@@ -200,6 +215,22 @@ def _notify_carla_trigger(request_id: str):
             print(f"[bridge] CARLA trigger failed: {e}")
     threading.Thread(target=_do, daemon=True).start()
 
+def _start_commit_timer(request_id: str):
+    _commit_deadlines[request_id] = time.monotonic() + TRANSFER_TIMEOUT_S
+
+def _expire_stale_commits():
+    """Called under _lock on every request: fail committed transfers that never got CARLA progress."""
+    now = time.monotonic()
+    for rid, deadline in list(_commit_deadlines.items()):
+        t = _transfers.get(rid)
+        if not t or t["status"] != "committed":
+            del _commit_deadlines[rid]
+        elif now > deadline:
+            t["status"] = "merge_failed"
+            t["reason"] = f"timeout: no CARLA progress within {TRANSFER_TIMEOUT_S:g}s of commit"
+            del _commit_deadlines[rid]
+            print(f"[bridge] Transfer {rid} timed out waiting for CARLA progress")
+
 def _transfer_candidates(platoon_id: str) -> list:
     p = _platoons.get(platoon_id)
     if not p: return []
@@ -236,6 +267,7 @@ class Handler(BaseHTTPRequestHandler):
         global _platoons
         p = self.path.rstrip("/")
         with _lock:
+            _expire_stale_commits()
             if p == "/health": self._ok({"ok": True})
             elif p == "/snapshot": self._ok({"platoons": _platoons, "transfers": _transfers, "readiness": _readiness})
             elif p == "/readiness": self._ok(_readiness)
@@ -261,11 +293,13 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(body, dict): return self._err(400, "json body must be an object")
 
         with _lock:
+            _expire_stale_commits()
             if p == "/readiness":
                 _readiness.update(body); _readiness["updated_at"] = _now(); self._ok(_readiness)
             elif p == "/reload":
                 _platoons = _load_initial_state()
                 _transfers = {}
+                _commit_deadlines.clear()
                 _readiness = _initial_readiness()
                 _readiness["updated_at"] = _now()
                 self._ok({"ok": True})
@@ -302,12 +336,12 @@ class Handler(BaseHTTPRequestHandler):
                 # Idempotent: a repeated commit returns the current state without re-triggering CARLA.
                 if t and t["status"] in COMMITTED_OR_LATER_STATUSES: self._ok(t)
                 elif t and self._rejects_transition(t, "commit"): pass
-                elif t: t["status"] = "committed"; _notify_carla_trigger(rid); self._ok(t)
+                elif t: t["status"] = "committed"; _start_commit_timer(rid); _notify_carla_trigger(rid); self._ok(t)
                 else: self._err(404, "not found")
             elif "/retry" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
                 if t and self._rejects_transition(t, "retry"): pass
-                elif t: t["status"] = "committed"; _notify_carla_trigger(rid); self._ok(t)
+                elif t: t["status"] = "committed"; _start_commit_timer(rid); _notify_carla_trigger(rid); self._ok(t)
                 else: self._err(404, "not found")
             elif "/splitting" in p:
                 rid = p.split("/")[-2]; t = _transfers.get(rid)
