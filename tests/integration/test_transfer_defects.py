@@ -143,3 +143,21 @@ def test_transfer_times_out(client, monkeypatch):
         assert t["status"] == "merge_failed" and t["reason"].startswith("timeout")
     finally:
         fake.stop()
+
+
+@pytest.mark.xfail(strict=True, reason="DEF-12: after a commit timeout, late real CARLA progress is rejected with 409 (logical/physical divergence); introduced by the DEF-11 fix")
+def test_late_carla_progress_after_timeout_is_accepted(client, monkeypatch):
+    # REQ: real physical progress must never be rejected. The scenario reports /splitting only after
+    # gap alignment, which can take longer than merge_timeout_s (alignment time is not measured).
+    monkeypatch.setattr(bridge, "TRANSFER_TIMEOUT_S", 0.3)
+    fake = FakeCarlaScenario(client.base_url, mode="silent").start()
+    monkeypatch.setattr(bridge, "CARLA_TRIGGER_URL", fake.trigger_url)
+    try:
+        rid = _committed(client)
+        client.wait_for_status(rid, "merge_failed", timeout=2.0)
+        for step in ("splitting", "merging", "carla_complete"):
+            status, body = client.post(f"/transfers/{rid}/{step}")
+            assert status == 200, (step, body)
+        assert client.members(TO)[-1] == VEHICLE
+    finally:
+        fake.stop()
