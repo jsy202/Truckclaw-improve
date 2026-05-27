@@ -91,6 +91,8 @@ _lock = threading.Lock()
 _platoons = _load_initial_state()
 _transfers: dict = {}
 _commit_deadlines: dict = {}  # request_id -> time.monotonic() deadline while status == committed
+_timed_out: set = set()       # request_ids failed by commit timeout (late CARLA progress still accepted)
+PROGRESS_ACTIONS = ("splitting", "merging", "carla_complete", "failed")
 
 def _initial_readiness():
     return {
@@ -217,6 +219,7 @@ def _notify_carla_trigger(request_id: str):
 
 def _start_commit_timer(request_id: str):
     _commit_deadlines[request_id] = time.monotonic() + TRANSFER_TIMEOUT_S
+    _timed_out.discard(request_id)
 
 def _expire_stale_commits():
     """Called under _lock on every request: fail committed transfers that never got CARLA progress."""
@@ -228,6 +231,7 @@ def _expire_stale_commits():
         elif now > deadline:
             t["status"] = "merge_failed"
             t["reason"] = f"timeout: no CARLA progress within {TRANSFER_TIMEOUT_S:g}s of commit"
+            _timed_out.add(rid)
             del _commit_deadlines[rid]
             print(f"[bridge] Transfer {rid} timed out waiting for CARLA progress")
 
@@ -257,6 +261,10 @@ class Handler(BaseHTTPRequestHandler):
     def _rejects_transition(self, t, action):
         """Send 409 and return True if `action` is not allowed from the transfer's current status."""
         if t["status"] in ALLOWED_FROM[action]: return False
+        # A commit timeout only means "no progress seen yet"; real physical progress arriving later wins.
+        if action in PROGRESS_ACTIONS and t["status"] == "merge_failed" and t["request_id"] in _timed_out:
+            _timed_out.discard(t["request_id"])
+            return False
         self._err(409, f"cannot {action} transfer in status {t['status']}")
         return True
     def _read_body(self):
@@ -300,6 +308,7 @@ class Handler(BaseHTTPRequestHandler):
                 _platoons = _load_initial_state()
                 _transfers = {}
                 _commit_deadlines.clear()
+                _timed_out.clear()
                 _readiness = _initial_readiness()
                 _readiness["updated_at"] = _now()
                 self._ok({"ok": True})

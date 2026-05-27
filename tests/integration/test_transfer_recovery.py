@@ -173,3 +173,20 @@ def test_existing_mock_carla_mode_still_completes(client, monkeypatch):
     _commit(client, rid)
     client.wait_for_status(rid, "carla_complete", timeout=8.0)
     assert client.members(TO)[-1] == VEHICLE
+
+
+def test_carla_failure_after_retry_of_timed_out_transfer_is_final(client, monkeypatch):
+    # After retry, a CARLA-reported failure must not be treated as a timeout (no late-progress exemption).
+    monkeypatch.setattr(bridge, "TRANSFER_TIMEOUT_S", 0.3)
+    fake = _use_fake(client, monkeypatch, mode="silent")
+    try:
+        rid = _request(client)
+        _commit(client, rid)
+        client.wait_for_status(rid, "merge_failed", timeout=2.0)
+        fake.mode = "fail"
+        assert client.post(f"/transfers/{rid}/retry")[0] == 200
+        client.wait_for_status(rid, "merge_failed")
+        assert client.transfer(rid)["reason"] == "fake carla failure"
+        assert client.post(f"/transfers/{rid}/carla_complete")[0] == 409
+    finally:
+        fake.stop()

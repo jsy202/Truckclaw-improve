@@ -145,7 +145,6 @@ def test_transfer_times_out(client, monkeypatch):
         fake.stop()
 
 
-@pytest.mark.xfail(strict=True, reason="DEF-12: after a commit timeout, late real CARLA progress is rejected with 409 (logical/physical divergence); introduced by the DEF-11 fix")
 def test_late_carla_progress_after_timeout_is_accepted(client, monkeypatch):
     # REQ: real physical progress must never be rejected. The scenario reports /splitting only after
     # gap alignment, which can take longer than merge_timeout_s (alignment time is not measured).
