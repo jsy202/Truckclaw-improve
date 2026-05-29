@@ -6,6 +6,8 @@ CARLA 자율주행 시뮬레이터(Town06 고속도로)에서 두 트럭 군집�
 Discord AI 봇(OpenClaw)이 서로 목적지 정보를 교환하고 협상하여 차량 이송을 결정합니다.
 협상이 완료되면 CARLA 시뮬레이터에서 실제 차선 변경과 군집 합류가 자동으로 진행됩니다.
 
+> **Post-project Integration & Verification (2026-10):** 연구 종료 후 bridge의 인터페이스, 상태 머신, 장애 처리를 CARLA 없이 검증했다. 결함 12건을 테스트로 재현하고 수정했다. → [아래 섹션](#post-project-integration--verification) · [validation/](validation/)
+
 ---
 
 ## 데모
@@ -357,6 +359,100 @@ python3 bridge/platoon_bridge_ctl.py --base-url http://127.0.0.1:18801 snapshot
 | `merge_distance_limit_m` | 55 | 합류 트리거 최대 허용 거리 |
 | `merge_timeout_s` | 120 | 합류 타임아웃 (초) |
 | `post_merge_speed_kmh` | 50 | 합류 완료 후 순항 속도 |
+
+---
+
+## Post-project Integration & Verification
+
+> 이 섹션은 **연구 종료 후(2026-10)** 수행한 검증 작업이다.
+> 위의 내용(시스템 설명, CARLA 시연 흐름)은 연구 당시 결과이며 이번 작업에서 재실행하거나 수정하지 않았다.
+> 아래에 적은 결함은 **이번 검증에서 처음 발견한 것**이며, 연구 당시 발견하거나 해결한 것이 아니다.
+> 연구 당시 코드는 tag `research-baseline`(`3a9788f`)에 보존되어 있다.
+
+### 1. 연구 당시 시스템
+
+Discord 에이전트 2개(OpenClaw)가 협상한다. 결과는 bridge REST 서버(:18801)에 기록된다. commit되면 bridge가 CARLA 시나리오(:18802)에 trigger를 보낸다. 시나리오는 물리 합류를 수행한 뒤 `/splitting`, `/merging`, `/carla_complete`로 진행 상황을 다시 보고한다.
+
+### 2. 검증 목적
+
+여러 컴포넌트가 연결된 시스템에서 **Interface, State, Failure**가 올바르게 이어지는지를 확인한다. CARLA가 없는 환경에서도 반복 실행할 수 있어야 한다.
+
+### 3. 테스트 구조 (Fake CARLA)
+
+bridge는 CARLA API를 직접 호출하지 않는다. CARLA와의 경계는 처음부터 HTTP 계약이었다. 그래서 새 adapter 계층을 만들지 않고, 그 계약을 구현하는 `FakeCarlaScenario`로 CARLA 측만 바꿔 끼웠다.
+
+```text
+[Production]  Agent ─▶ Bridge REST ─▶ HTTP trigger ─▶ two_platoon_truck_scenario.py ─▶ CARLA
+[Test]        pytest ─▶ Bridge REST (실제 코드, in-process) ─▶ HTTP trigger ─▶ FakeCarlaScenario
+                                                                  (complete / silent / fail / partial / bad_response)
+```
+
+production 코드에 테스트용 분기는 없다. 테스트는 기존 `CARLA_TRIGGER_URL`과 `/reload`만 사용한다.
+
+### 4. 발견한 결함 (실제 실행으로 재현)
+
+| ID | 결함 | 영향 |
+|---|---|---|
+| DEF-01 | 존재하지 않는 vehicle_id로 transfer 생성됨 (200) | 잘못된 물리 명령 |
+| DEF-02 | 존재하지 않는 platoon → 서버 예외, 응답 없이 연결 끊김 | 클라이언트가 원인을 알 수 없음 |
+| DEF-03 | accept 없이 commit 가능 | 수신 측 동의 없이 물리 실행 |
+| DEF-04 | 같은 request_id에 commit 2회 → CARLA trigger 2회 | 중복 물리 실행 |
+| DEF-05 | pending 상태에서 `carla_complete` → 물리 이송 없이 멤버십 이동 | 논리/물리 상태 불일치 |
+| DEF-06 | 완료된 transfer가 `accepted`로 역행 | 상태 무결성 |
+| DEF-07 | 없는 request의 `/failed` → 응답 없음 | 오류 은폐 |
+| DEF-08 | JSON 배열 body → handler 예외 | malformed payload에 취약 |
+| DEF-09 | CARLA trigger 실패가 transfer 상태에 반영 안 됨 (`trigger_failed`는 README에만 존재) | 장애 은폐 |
+| DEF-10 | trigger 실패 후 platoon이 `/reload` 전까지 영구 잠김 | 복구 불가 |
+| DEF-11 | transfer timeout 없음 (`merge_timeout_s` 설정은 존재하나 미사용) | 무한 대기 |
+| DEF-12 | **이번 검증의 DEF-11 수정이 만든 회귀**: timeout 후 늦게 도착한 실제 진행 보고를 거부 | 논리/물리 불일치 |
+
+### 5. 검증 방법
+
+1. 결함마다 요구 동작을 검사하는 테스트를 하나씩 작성하고, `xfail(strict=True)`로 먼저 commit했다. production 코드는 바꾸지 않았다.
+2. 결함 하나 또는 같은 원인을 가진 결함 묶음 하나마다 수정 commit을 하나씩 만들었다. 각 commit에서 해당 xfail을 PASS로 전환했다.
+3. 같은 회귀 테스트를 원본 bridge에도 실행해, 원본에서 이미 맞던 동작과 이번에 고친 동작을 구분했다.
+4. negative control을 수행했다. Fake를 실패 모드로 바꾸거나 수정 코드 일부를 제거하면 테스트가 실제로 실패하는 것을 확인했다.
+
+### 6. 수정 결과
+
+| 수정 | 결함 | commit |
+|---|---|---|
+| platoon/vehicle 검증, 404 | DEF-01, 02 | `d534709` |
+| non-object JSON → 400 | DEF-08 | `7189c1c` |
+| `/failed` 404 | DEF-07 | `b241214` |
+| commit 멱등성 | DEF-04 | `bf35524` |
+| 상태 전이 표(`ALLOWED_FROM`) 강제, 위반 시 409 | DEF-03, 05, 06 | `aee1a82` |
+| trigger 실패 → `trigger_failed`, platoon 해제 | DEF-09, 10 | `ee9568a` |
+| 기존 `merge_timeout_s`로 commit timeout | DEF-11 | `a9e643d` |
+| timeout 후 지연 진행 보고 허용 | DEF-12 | `319b49f` |
+
+production 변경은 `bridge/platoon_bridge_server.py` 한 파일뿐이다. 시나리오, 에이전트, 설정 파일은 바꾸지 않았다.
+
+### 7. Regression Test 결과 (2026-10-01, 로컬 실행)
+
+| 항목 | 결과 |
+|---|---|
+| 테스트 수 | 36 (integration 26, unit 10) |
+| 결과 | **36 passed, 0 xfailed, 0 failed** |
+| 반복 | 10회 연속 실행, 매회 36 passed (13.35–13.96 s) |
+| 환경 | Python 3.10.12, pytest 8.4.2, CARLA 미사용 |
+
+실행: `pip install -r requirements-test.txt && python3 -m pytest`
+
+자세한 내용: [test_report.md](validation/test_report.md), [traceability_matrix.md](validation/traceability_matrix.md)
+
+### 8. CI
+
+`.github/workflows/test.yml`은 push와 PR마다 문법 검사, unit 테스트, FakeCarlaScenario integration 테스트를 실행한다. 이 저장소는 아직 push되지 않았으므로 **GitHub에서 실행된 기록은 없다.** 같은 명령을 로컬에서만 실행했다.
+
+### 9. Limitations
+
+- **수정된 bridge를 실제 CARLA 시나리오와 함께 재검증하지 않았다.** Fake는 HTTP 계약만 구현하며, 시나리오의 `/snapshot` polling 타이밍은 재현하지 않는다.
+- 물리 기동(splitting/merging) 중의 timeout은 실제 기동 시간을 측정하지 못해 DEFERRED로 남겼다.
+- 시나리오의 `TransferState.ABORT`와 `MERGE_TIMEOUT_S`는 정의만 있고 쓰이지 않는다. 시나리오에는 실패를 bridge에 보고하는 경로가 없다. 이 부분은 정적 분석으로만 확인했다.
+- LLM 에이전트의 협상 행동 자체는 검증 범위 밖이다. 결정적 dialogue guard만 unit 테스트했다.
+
+자세한 내용: [limitations.md](validation/limitations.md)
 
 ---
 
