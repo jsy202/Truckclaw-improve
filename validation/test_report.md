@@ -1,6 +1,6 @@
 # Test Report — Truckclaw-improve (Post-project Validation)
 
-> **이 보고서는 연구 종료 후(2026-10-01) 수행한 검증 결과다.** 연구 당시의 CARLA 데모 결과와 무관하다.
+> **이 보고서는 연구 종료 후 수행한 검증 결과다.** 연구 당시의 CARLA 데모 결과와 무관하다.
 > 연구 당시 결과(실제 CARLA 합류 시연)는 이번에 재실행하지 않았다.
 
 ## 1. 실행 환경
@@ -127,3 +127,11 @@ limitations 문서를 쓰면서 정적으로 발견했다. 이후 xfail 테스�
 - docker-compose 기동
 
 이번 수정이 실제 CARLA 데모 경로에서 회귀를 일으키지 않는지는 **CARLA로 재검증되지 않았다.** `limitations.md` 참조.
+
+## 10. 최종 검수 (공개 전 리뷰)
+
+`research-baseline..validation` diff를 다시 검토했다. 코드는 바꾸지 않았고 문서만 정정했다(`limitations.md`).
+
+- 일시적 trigger 실패 시 이제 `/retry`가 필요하다. 이전에는 시나리오의 polling이 transfer를 가져가 진행했다(동작 변화 가능성, B).
+- commit timeout 뒤에는 시나리오가 그 transfer를 조용히 포기하고, 넓힌 차간 거리를 되돌리지 않는다(B).
+- **DEF-12는 Fake 모델의 가정(trigger 뒤 상태와 무관하게 진행 보고)에 기대어 재현한 것이다.** 실제 시나리오에서는 짧은 경쟁 구간에서만 일어날 수 있다. 테스트와 Fake가 같은 가정을 공유한 사례로 기록한다.
