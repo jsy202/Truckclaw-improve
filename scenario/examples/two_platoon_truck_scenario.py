@@ -403,7 +403,7 @@ class BidirectionalTransferCoordinator:
 
 def main():
     _bridge_reload()
-    sim = Core.Simulation(world="Town06", dt=DT, synchronous=True); cmap = sim.map; bps = sim.get_vehicle_blueprints(); bp = bps.filter("vehicle.carlamotors.european_hgv")[0]
+    sim = Core.Simulation(world="Town06", dt=DT, synchronous=True); cmap = sim.map; bps = sim.get_vehicle_blueprints(); bp = next((bps.filter(c)[0] for c in ("vehicle.carlamotors.european_hgv", "vehicle.mercedes-benz.actros", "vehicle.carlamotors.carlacola", "vehicle.carlamotors.firetruck") if bps.filter(c)), None) or bps.filter("*truck*")[0]; print(f"[main] blueprint selected: {bp.id}")  # same fallback order as Truckclaw_movable/copyable (CARLA 0.9.13 has no european_hgv)
     tm = sim.get_trafficmanager(); tm.set_synchronous_mode(True); tm_port = tm.get_port()
     p1 = build_truck_platoon(sim, bp, P1_SPAWN, "platoon_a", SYNC_SPEED_KMH, tm, tm_port)
     p2 = build_truck_platoon(sim, bp, P2_SPAWN, "platoon_b", SYNC_SPEED_KMH, tm, tm_port)
