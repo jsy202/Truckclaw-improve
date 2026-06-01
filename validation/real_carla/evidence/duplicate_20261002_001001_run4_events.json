@@ -1,0 +1,26 @@
+[
+  {
+    "t": 1790867555.2154157,
+    "rid": "tr_5df57f1a",
+    "status": "accepted",
+    "reason": null
+  },
+  {
+    "t": 1790867555.6182473,
+    "rid": "tr_5df57f1a",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790867565.669694,
+    "rid": "tr_5df57f1a",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790867569.2925239,
+    "rid": "tr_5df57f1a",
+    "status": "carla_complete",
+    "reason": null
+  }
+]

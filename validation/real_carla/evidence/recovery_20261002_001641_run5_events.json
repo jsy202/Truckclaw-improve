@@ -1,0 +1,26 @@
+[
+  {
+    "t": 1790868019.842206,
+    "rid": "tr_ca7a2c30",
+    "status": "trigger_failed",
+    "reason": "CARLA trigger POST failed: HTTP Error 503: Service Unavailable"
+  },
+  {
+    "t": 1790868020.0432508,
+    "rid": "tr_a30a2f38",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790868030.29616,
+    "rid": "tr_a30a2f38",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790868033.9170141,
+    "rid": "tr_a30a2f38",
+    "status": "carla_complete",
+    "reason": null
+  }
+]

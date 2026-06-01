@@ -1,0 +1,26 @@
+[
+  {
+    "t": 1790867510.4933238,
+    "rid": "tr_de7c0459",
+    "status": "accepted",
+    "reason": null
+  },
+  {
+    "t": 1790867510.8955338,
+    "rid": "tr_de7c0459",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790867520.5443888,
+    "rid": "tr_de7c0459",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790867524.164383,
+    "rid": "tr_de7c0459",
+    "status": "carla_complete",
+    "reason": null
+  }
+]

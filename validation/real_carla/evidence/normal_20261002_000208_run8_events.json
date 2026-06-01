@@ -1,0 +1,20 @@
+[
+  {
+    "t": 1790867284.4230294,
+    "rid": "tr_f5c68f43",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790867294.2743366,
+    "rid": "tr_f5c68f43",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790867298.0953913,
+    "rid": "tr_f5c68f43",
+    "status": "carla_complete",
+    "reason": null
+  }
+]

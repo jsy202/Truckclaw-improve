@@ -1,0 +1,26 @@
+[
+  {
+    "t": 1790868779.9677374,
+    "rid": "tr_8848d0a1",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790868790.0208185,
+    "rid": "tr_8848d0a1",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790868794.2461488,
+    "rid": "tr_8848d0a1",
+    "status": "carla_complete",
+    "reason": null
+  },
+  {
+    "t": 1790868795.0504527,
+    "rid": "tr_b4cdf158",
+    "status": "committed",
+    "reason": null
+  }
+]

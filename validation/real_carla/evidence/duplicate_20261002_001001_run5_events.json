@@ -1,0 +1,26 @@
+[
+  {
+    "t": 1790867619.242272,
+    "rid": "tr_4079cd65",
+    "status": "accepted",
+    "reason": null
+  },
+  {
+    "t": 1790867619.6451073,
+    "rid": "tr_4079cd65",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790867629.4956725,
+    "rid": "tr_4079cd65",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790867633.115951,
+    "rid": "tr_4079cd65",
+    "status": "carla_complete",
+    "reason": null
+  }
+]

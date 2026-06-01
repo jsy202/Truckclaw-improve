@@ -1,0 +1,59 @@
+{
+  "n_vehicles": 6,
+  "vehicles": {
+    "platoon_a_truck0": {
+      "actor_id": 120,
+      "type": "vehicle.carlamotors.carlacola",
+      "x": 303.07,
+      "y": 137.17,
+      "road_id": 37,
+      "lane_id": -3,
+      "speed_kmh": 16.8
+    },
+    "platoon_a_truck1": {
+      "actor_id": 121,
+      "type": "vehicle.carlamotors.carlacola",
+      "x": 281.02,
+      "y": 144.08,
+      "road_id": 37,
+      "lane_id": -5,
+      "speed_kmh": 17.2
+    },
+    "platoon_a_truck2": {
+      "actor_id": 122,
+      "type": "vehicle.carlamotors.carlacola",
+      "x": 290.66,
+      "y": 137.12,
+      "road_id": 37,
+      "lane_id": -3,
+      "speed_kmh": 16.9
+    },
+    "platoon_b_truck0": {
+      "actor_id": 123,
+      "type": "vehicle.carlamotors.carlacola",
+      "x": 318.79,
+      "y": 144.24,
+      "road_id": 37,
+      "lane_id": -5,
+      "speed_kmh": 17.2
+    },
+    "platoon_b_truck1": {
+      "actor_id": 124,
+      "type": "vehicle.carlamotors.carlacola",
+      "x": 306.2,
+      "y": 144.18,
+      "road_id": 37,
+      "lane_id": -5,
+      "speed_kmh": 17.2
+    },
+    "platoon_b_truck2": {
+      "actor_id": 125,
+      "type": "vehicle.carlamotors.carlacola",
+      "x": 293.61,
+      "y": 144.13,
+      "road_id": 37,
+      "lane_id": -5,
+      "speed_kmh": 17.2
+    }
+  }
+}

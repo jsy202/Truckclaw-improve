@@ -1,0 +1,26 @@
+[
+  {
+    "t": 1790867774.454371,
+    "rid": "tr_fb52f946",
+    "status": "accepted",
+    "reason": null
+  },
+  {
+    "t": 1790867774.8560872,
+    "rid": "tr_fb52f946",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790867784.5071838,
+    "rid": "tr_fb52f946",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790867788.129413,
+    "rid": "tr_fb52f946",
+    "status": "carla_complete",
+    "reason": null
+  }
+]

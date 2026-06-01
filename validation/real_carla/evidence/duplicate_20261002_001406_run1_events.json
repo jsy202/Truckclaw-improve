@@ -1,0 +1,26 @@
+[
+  {
+    "t": 1790867665.7200034,
+    "rid": "tr_986ae371",
+    "status": "accepted",
+    "reason": null
+  },
+  {
+    "t": 1790867666.1218383,
+    "rid": "tr_986ae371",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790867676.169348,
+    "rid": "tr_986ae371",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790867679.590801,
+    "rid": "tr_986ae371",
+    "status": "carla_complete",
+    "reason": null
+  }
+]

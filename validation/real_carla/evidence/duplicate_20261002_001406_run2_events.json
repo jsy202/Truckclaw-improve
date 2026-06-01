@@ -1,0 +1,26 @@
+[
+  {
+    "t": 1790867729.5269055,
+    "rid": "tr_c30a2360",
+    "status": "accepted",
+    "reason": null
+  },
+  {
+    "t": 1790867729.9288297,
+    "rid": "tr_c30a2360",
+    "status": "committed",
+    "reason": null
+  },
+  {
+    "t": 1790867739.9801357,
+    "rid": "tr_c30a2360",
+    "status": "merging",
+    "reason": null
+  },
+  {
+    "t": 1790867743.4012103,
+    "rid": "tr_c30a2360",
+    "status": "carla_complete",
+    "reason": null
+  }
+]
