@@ -56,8 +56,21 @@ Agent(Discord) ─▶ bridge REST :18801 ─(commit)─▶ HTTP trigger :18802 �
 
 Python 3.10, 로컬 실행. 10회 연속 실행에서 매회 같은 결과였다. GitHub Actions 결과는 workflow `tests`를 참고한다.
 
+## Real-CARLA Re-validation (Post-project, 2026-10-02)
+FakeCarlaScenario 테스트와 별개로, 수정된 bridge를 **실제 CARLA 0.9.13 + 기존 시나리오**로 재검증했다(등급 A). OpenClaw/Discord는 쓰지 않고 기존 negotiation harness를 사용했으며, 차량은 0.9.13 제약으로 carlacola를 썼다.
+
+| 시나리오 | 반복 | 결과 |
+|---|---|---|
+| 정상 이송 | 10 | **10/10 성공**, request→carla_complete 평균 13.87 s (13.65–14.45), 논리/물리 상태 일치 10/10 |
+| 같은 request에 commit ×3 | 현재 5 / 수정 전 3 | CARLA trigger 1회 vs 3회. 단 **물리 split은 양쪽 모두 1회** (시나리오가 polling 기반이라 수정 전에도 중복 동작은 없었음) |
+| trigger 장애(HTTP 503) → 회복 | 현재 5 / 수정 전 2 | 현재: `trigger_failed` → 새 요청 수락 → 완료 5/5. 수정 전: 원 transfer는 그대로 완료됐지만 이동한 차량의 재요청이 수락된 뒤 `committed`에서 정지 |
+
+- commit→물리 시작 최대 10.26 s(n = 20). 120 s timeout은 **이 한 가지 조건에서만** 약 11.7배 여유가 있었다.
+- trade-off를 실제 실행으로 확인했다. 수정 후에는 trigger가 실패하면 transfer를 수행하지 않고 재요청으로 회복한다. 수정 전에는 polling 덕분에 자동으로 완료됐다.
+- → [validation/real_carla/validation_report.md](validation/real_carla/validation_report.md)
+
 ## Limitations
-- **수정된 bridge를 실제 CARLA 시나리오, OpenClaw, Discord와 함께 재검증하지 않았다.**
+- 실제 CARLA 재검증은 **한 가지 시나리오 조건(carlacola, 같은 spawn, harness 요청)** 에서만 했다. OpenClaw/Discord 협상과 european_hgv 차량은 검증하지 않았다.
 - Fake는 HTTP 계약만 구현한다. 실제 시나리오의 `/snapshot` polling 타이밍은 재현하지 않는다.
 - 동작이 바뀐 부분(정적 분석, CARLA에서 미확인):
   - **일시적** trigger 실패 시 이제 `/retry`가 필요하다.
