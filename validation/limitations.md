@@ -4,8 +4,8 @@
 
 | 항목 | 이유 | 영향 |
 |---|---|---|
-| CARLA 물리 시나리오 (갭 확보, 차선 변경, CACC 합류) | CARLA 미실행. 이번 검증은 bridge와 HTTP 계약까지만 다룸 | 물리 동작의 정확성, 실제 기동 시간은 검증되지 않음 |
-| 수정된 bridge + 실제 시나리오 조합 | **2026-10-02 실제 CARLA 0.9.13에서 부분 재검증**(정상 10, 중복 5+3, 장애/회복 5+2) — [real_carla/validation_report.md](real_carla/validation_report.md) | 한 가지 조건(carlacola, 같은 spawn, harness 요청)만 검증. 일시적 trigger 실패 시 동작 변화는 실제 실행으로 확인됨(A) |
+| CARLA 물리 시나리오 (갭 확보, 차선 변경, CACC 합류) | FakeCarlaScenario 테스트에서는 미실행. 실제 CARLA 재검증(real_carla/)에서 합류 완료, 최종 차선과 위치, 기동 시간을 측정 | CACC 추종 품질(간격 안정성)과 다른 초기 조건은 평가하지 않음 |
+| 수정된 bridge + 실제 시나리오 조합 | **실제 CARLA 0.9.13에서 부분 재검증**(정상 10, 중복 5+3, 장애/회복 5+2) — [real_carla/validation_report.md](real_carla/validation_report.md) | 한 가지 조건(carlacola, 같은 spawn, harness 요청)만 검증. 일시적 trigger 실패 시 동작 변화는 실제 실행으로 확인됨(A) |
 | OpenClaw 에이전트(LLM)의 협상 행동 | 외부 LLM·Discord 필요 | 에이전트가 SKILL.md 절차를 지키는지는 검증 범위 밖. 결정적 guard와 bridge 계약만 검증 |
 | docker-compose 배포 | 미실행 | 컨테이너 환경의 설정 파일 마운트 등은 정적 확인만(B) |
 | GitHub Actions 실제 실행 | push 안 함 | workflow는 로컬에서 동일 명령으로만 확인 |

@@ -1,7 +1,7 @@
 # Real-CARLA Re-validation Report — Truckclaw-improve (Post-project Validation)
 
 > **실제 CARLA 실행 결과(등급 A)** 다. FakeCarlaScenario 결과(`validation/test_report.md`)와는 별개다.
-> 측정일 2026-10-02. 환경과 절차는 [test_plan.md](test_plan.md), 원시 데이터는 [raw_results.csv](raw_results.csv)와 `evidence/`에 있다.
+> 환경과 절차는 [test_plan.md](test_plan.md), 원시 데이터는 [raw_results.csv](raw_results.csv)와 `evidence/`에 있다.
 
 **측정 환경(모든 수치 공통):** CARLA 0.9.13(offscreen, Low quality, run마다 서버 새로 기동), RTX 3060, Python 3.7 client, 기존 `two_platoon_truck_scenario.py`(Town06, 동기 dt 0.01), 차량 `vehicle.carlamotors.carlacola`(0.9.13에 european_hgv 없음), OpenClaw/Discord 대신 기존 negotiation harness 또는 같은 REST 호출, 수정된 bridge(validation 브랜치) — 비교 run은 research-baseline bridge.
 

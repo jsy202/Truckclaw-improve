@@ -24,7 +24,7 @@ Agent(Discord) ─▶ bridge REST :18801 ─(commit)─▶ HTTP trigger :18802 �
 
 연구 당시 코드는 tag [`research-baseline`](https://github.com/jsy202/Truckclaw-improve/tree/research-baseline) (`3a9788f`)에 있다.
 
-## Post-project Validation (2026-10, 연구 종료 후)
+## Post-project Validation (연구 종료 후)
 여러 컴포넌트가 연결된 시스템에서 **Interface, State, Failure가 올바르게 이어지는지**를 검증했다.
 
 - 검증 방법은 **FakeCarlaScenario를 이용한 HTTP integration validation**이다. bridge와 CARLA 시나리오 사이의 기존 HTTP 계약(trigger 수신, 진행 보고)을 구현한 Fake를 실제 bridge 코드에 연결했다.
@@ -56,7 +56,7 @@ Agent(Discord) ─▶ bridge REST :18801 ─(commit)─▶ HTTP trigger :18802 �
 
 Python 3.10, 로컬 실행. 10회 연속 실행에서 매회 같은 결과였다. GitHub Actions 결과는 workflow `tests`를 참고한다.
 
-## Real-CARLA Re-validation (Post-project, 2026-10-02)
+## Real-CARLA Re-validation (Post-project)
 FakeCarlaScenario 테스트와 별개로, 수정된 bridge를 **실제 CARLA 0.9.13 + 기존 시나리오**로 재검증했다(등급 A). OpenClaw/Discord는 쓰지 않고 기존 negotiation harness를 사용했으며, 차량은 0.9.13 제약으로 carlacola를 썼다.
 
 | 시나리오 | 반복 | 결과 |

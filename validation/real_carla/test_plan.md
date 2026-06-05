@@ -1,4 +1,4 @@
-# Real-CARLA Re-validation — Test Plan (Post-project Validation, 2026-10-02)
+# Real-CARLA Re-validation — Test Plan (Post-project Validation)
 
 FakeCarlaScenario integration test(`tests/`)와 **별개로**, 수정된 bridge(validation 브랜치)를 **실제 CARLA 시뮬레이터와 기존 시나리오**로 재검증한다.
 

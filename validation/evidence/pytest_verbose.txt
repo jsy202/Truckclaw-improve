@@ -1,4 +1,4 @@
-# python3 -m pytest -v  (Python 3.10.12, pytest 8.4.2) 2026-10-01T21:57:52+09:00 code at 319b49f
+# python3 -m pytest -v  (Python 3.10.12, pytest 8.4.2) code at 319b49f
 tests/integration/test_transfer_defects.py::test_rejects_unknown_vehicle_id PASSED [  2%]
 tests/integration/test_transfer_defects.py::test_rejects_unknown_platoon_id PASSED [  5%]
 tests/integration/test_transfer_defects.py::test_rejects_non_object_json_body PASSED [  8%]
