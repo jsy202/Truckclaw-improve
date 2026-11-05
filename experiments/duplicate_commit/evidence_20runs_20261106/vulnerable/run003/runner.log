@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/jsy202/validation-work/Truckclaw-duplicate-commit/experiments/duplicate_commit/run_carla.py", line 261, in <module>
+    main()
+  File "/home/jsy202/validation-work/Truckclaw-duplicate-commit/experiments/duplicate_commit/run_carla.py", line 215, in main
+    results.append(run_owned_server(args, protected))
+  File "/home/jsy202/validation-work/Truckclaw-duplicate-commit/experiments/duplicate_commit/run_carla.py", line 238, in run_owned_server
+    client.get_world()
+RuntimeError: time-out of 10000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:2000

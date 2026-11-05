@@ -200,6 +200,7 @@ def drive_case(client, output, protected):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--case', choices=('both', 'vulnerable', 'fixed'), default='both')
     parser.add_argument('--carla-root', type=Path, default=Path('/home/jsy202/carla-0.9.13'))
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -209,12 +210,14 @@ def main():
         if probe.connect_ex(('127.0.0.1', 2000)) == 0:
             raise RuntimeError('Port 2000 already in use; refusing to touch existing server')
     results = []
-    for protected in (False, True):
+    cases = (False, True) if args.case == 'both' else (args.case == 'fixed',)
+    for protected in cases:
         results.append(run_owned_server(args, protected))
     (args.output / 'comparison.json').write_text(json.dumps(results, indent=2))
-    assert results[0]['truck_collision_events'] > 0, 'Fault did not cause a collision'
-    assert results[1]['truck_collision_events'] == 0, 'Protected case collided'
-    assert results[1]['physical_starts'] == 1
+    if args.case == 'both':
+        assert results[0]['truck_collision_events'] > 0, 'Fault did not cause a collision'
+        assert results[1]['truck_collision_events'] == 0, 'Protected case collided'
+        assert results[1]['physical_starts'] == 1
 
 
 def run_owned_server(args, protected):

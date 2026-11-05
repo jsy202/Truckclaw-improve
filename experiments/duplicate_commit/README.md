@@ -1,5 +1,8 @@
 # 자소서용 검증: 중복 요청에 의한 제동 초기화와 충돌
 
+배경: 사용자가 직접 수행한 사전 테스트 20회 중 에이전트 중복 호출이 1회
+발생하여 이번 검증을 제안했다. 상세 기록은 `PRIOR_OBSERVATION.md`에 있다.
+
 목적: 동일 요청 두 번 → 차량 제어 재시작 → 충돌을 실제 CARLA 물리 엔진에서
 재현하고, 중복 요청 방지 후 같은 조건으로 회귀 검증한다.
 
@@ -31,3 +34,13 @@ PYTHONPATH=/home/jsy202/carla-0.9.13/PythonAPI/carla/dist/carla-0.9.13-py3.7-lin
 증거: `evidence/*/result.json`, `telemetry.json`, `before_duplicate.png`,
 `final.png`과 충돌 시 `collision.png`. `comparison.json`으로 전후를 비교한다.
 실행 결과와 범위는 별도 `REPORT.md`에 기록한다.
+
+20회씩 반복하려면 새 출력 경로를 사용한다. 수정 전 20회 이후 수정 후 20회를
+실행하며 매 회차 새 CARLA 서버를 시작한다. 오류는 별도로 집계하고 자동으로
+성공 결과에 포함하지 않는다.
+
+```bash
+python3 experiments/duplicate_commit/run_batch.py --runs 20 --output experiments/duplicate_commit/evidence_20runs_NEW
+```
+
+`runs.jsonl`은 회차별 원본 집계, `summary.json`은 현재 진행 결과다.

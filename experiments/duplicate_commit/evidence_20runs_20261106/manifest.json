@@ -1,0 +1,8 @@
+{
+  "started_at_utc": "2026-11-05T19:40:28Z",
+  "runs_per_case": 20,
+  "prior_observation": "사용자가 직접 수행한 사전 테스트 20회 중 에이전트 중복 호출이 1회 발생하여 이번 검증을 제안함.",
+  "batch_input": "Identical HTTP request sent twice in every case; no live LLM calls.",
+  "rendering": "RenderOffScreen",
+  "server_isolation": "fresh server for each case"
+}

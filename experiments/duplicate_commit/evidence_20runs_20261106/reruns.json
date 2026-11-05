@@ -1,0 +1,14 @@
+[
+  {
+    "case": "vulnerable",
+    "run": 3,
+    "exit_code": 0,
+    "artifact_dir": "reruns/vulnerable/run003",
+    "wall_seconds": 26.77,
+    "collision_events": 1,
+    "physical_starts": 2,
+    "passed": true,
+    "final_speed_mps": 1.2755002337812322,
+    "final_distance_m": 6.072717189788818
+  }
+]

@@ -1,0 +1,2 @@
+# Preserve raw simulator output, including whitespace in crash diagnostics.
+evidence_20runs_20261106/**/*.log -whitespace

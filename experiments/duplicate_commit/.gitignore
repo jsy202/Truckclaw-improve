@@ -2,3 +2,5 @@
 !evidence/fixed/*.png
 !evidence/carla_vulnerable.log
 !evidence/carla_fixed.log
+!evidence_20runs_20261106/**/*.png
+!evidence_20runs_20261106/**/*.log

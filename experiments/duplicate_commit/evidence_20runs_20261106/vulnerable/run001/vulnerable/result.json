@@ -1,0 +1,45 @@
+{
+  "case": "vulnerable",
+  "fault_injected": true,
+  "vehicle_blueprint": "vehicle.carlamotors.carlacola",
+  "camera_transform": "Transform(Location(x=576.696045, y=4.863186, z=23.785299), Rotation(pitch=-56.154598, yaw=-104.511765, roll=0.000003))",
+  "ego_transform": "Transform(Location(x=564.859192, y=-9.992891, z=0.025414), Rotation(pitch=-2.816681, yaw=-176.489212, roll=-0.012054))",
+  "obstacle_transform": "Transform(Location(x=558.792969, y=-10.268801, z=-0.026569), Rotation(pitch=1.281712, yaw=-179.602020, roll=0.008260))",
+  "scope": "isolated emergency-stop reset model, real CARLA physics",
+  "commit_requests": 2,
+  "physical_starts": 2,
+  "truck_collision_events": 1,
+  "collision_events": [
+    {
+      "frame": 253,
+      "other_actor_id": 121,
+      "other_actor_type": "vehicle.carlamotors.carlacola",
+      "impulse": 51412.717569607405
+    }
+  ],
+  "events": [
+    {
+      "event": "commit",
+      "frame": 37,
+      "request_id": "transfer-001",
+      "started": true,
+      "starts": 1,
+      "braking": false
+    },
+    {
+      "event": "emergency_stop",
+      "frame": 67
+    },
+    {
+      "event": "commit",
+      "frame": 167,
+      "request_id": "transfer-001",
+      "started": true,
+      "starts": 2,
+      "braking": false
+    }
+  ],
+  "final_speed_mps": 1.2755002337812322,
+  "final_distance_m": 6.072717189788818,
+  "collision_image": "collision.png"
+}
