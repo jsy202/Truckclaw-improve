@@ -1,0 +1,4 @@
+!evidence/vulnerable/*.png
+!evidence/fixed/*.png
+!evidence/carla_vulnerable.log
+!evidence/carla_fixed.log

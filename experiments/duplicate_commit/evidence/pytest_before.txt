@@ -1,0 +1,31 @@
+FF..                                                                     [100%]
+=================================== FAILURES ===================================
+___________________ test_duplicate_preserves_emergency_brake ___________________
+
+    def test_duplicate_preserves_emergency_brake():
+        executor = module.TransferExecutor()
+        executor.commit('transfer-1')
+        executor.emergency_stop()
+        executor.commit('transfer-1')
+>       assert executor.control() == (0.0, 1.0)
+E       assert (1.0, 0.0) == (0.0, 1.0)
+E
+E         At index 0 diff: 1.0 != 0.0
+E         Use -v to get more diff
+
+tests/unit/test_duplicate_commit_executor.py:17: AssertionError
+____________________ test_concurrent_duplicates_start_once _____________________
+
+    def test_concurrent_duplicates_start_once():
+        executor = module.TransferExecutor()
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            list(pool.map(executor.commit, ['transfer-1'] * 32))
+>       assert executor.starts == 1
+E       assert 32 == 1
+E        +  where 32 = <duplicate_executor.TransferExecutor object at 0x7590b15948b0>.starts
+
+tests/unit/test_duplicate_commit_executor.py:25: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_duplicate_commit_executor.py::test_duplicate_preserves_emergency_brake
+FAILED tests/unit/test_duplicate_commit_executor.py::test_concurrent_duplicates_start_once
+2 failed, 2 passed in 0.03s
