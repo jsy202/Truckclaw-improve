@@ -2,7 +2,7 @@
 <html lang="ko"><meta charset="utf-8"><title>자소서용 검증 · 중복 요청</title>
 <style>body{margin:40px auto;max-width:1200px;padding:0 20px;font:17px/1.6 system-ui;background:#101724;color:#e7edf7}h1{font-size:30px}section{display:grid;grid-template-columns:1fr 1fr;gap:20px}article{background:#1c2738;padding:20px;border-radius:12px}img{width:100%;border-radius:6px}a{color:#93c5fd}small{color:#aebdd0}@media(max-width:800px){section{grid-template-columns:1fr}}</style>
 <h1>자소서용 검증: 동일 요청 두 번과 차량 충돌</h1>
-<p>실험용 제어기에 제동 초기화 결함을 주입하고 실제 CARLA 물리 엔진에서 비교했습니다.
+<p>같은 요청을 두 번 받았을 때 제동이 초기화되는 결함을 실제 CARLA 물리 엔진에서 재현하고 비교했습니다.
 화면 창 없이 RGB 카메라와 충돌 센서로 증거를 수집합니다.</p>
 <section><article><h2>수정 전 · 중복 실행 허용</h2>
 <p>같은 요청이 다시 들어오면 안전 정지가 해제되고 앞 차량으로 가속합니다.</p>

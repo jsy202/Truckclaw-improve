@@ -1,4 +1,4 @@
-"""Isolated fault-injection model; not the production CARLA coordinator.
+"""Isolated reproduction model of the restart defect; not the production CARLA coordinator.
 
 Restarting a request clears a latched emergency stop. The vulnerable mode is
 kept explicitly for before/after reproduction, never enabled in production.

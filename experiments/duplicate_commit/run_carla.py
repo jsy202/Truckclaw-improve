@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Headless physical fault-injection experiment, using a real CARLA server.
-
-This isolated restart defect is deliberately injected. It is not a claim that
-the production platoon coordinator starts two controllers on duplicate commit.
-"""
+"""Headless physical reproduction experiment, using a real CARLA server."""
 import argparse
 import json
 import math
