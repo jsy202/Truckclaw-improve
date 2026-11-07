@@ -16,6 +16,9 @@ Agent(Discord) ─▶ bridge REST :18801 ─(commit)─▶ HTTP trigger :18802 �
 ```
 
 ## Original Research
+- 논문: 「Multi-Agent 기반 군집 간 협상을 통한 군집주행 차량의 동적 합류 연구」
+- 정승육(SeungYook Jung): 제1저자
+
 연구 당시에는 다음을 구현하고 CARLA에서 시연했다. 아래 "Original Research Documentation"은 당시 README 원문이며 수정하지 않았다.
 
 - AI agent 협상
